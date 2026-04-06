@@ -5,92 +5,238 @@
   <title>Tradutor de Cardápio</title>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #1e1e2f, #121212);
-      color: white;
-      text-align: center;
-      padding: 40px;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
     }
 
-    h1 {
+    body {
+      background: linear-gradient(135deg, #0f0f0f, #1f1f2e);
+      color: white;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* SPLASH SCREEN */
+    .intro {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #00c896, #004d40);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      animation: fadeOut 1s ease forwards;
+      animation-delay: 3s;
+      z-index: 10;
+    }
+
+    .intro h1 {
+      font-size: 32px;
       margin-bottom: 10px;
     }
 
+    .intro p {
+      font-size: 18px;
+      max-width: 400px;
+      line-height: 1.4;
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+
+    /* APP */
+    .app {
+      opacity: 0;
+      animation: fadeIn 1s ease forwards;
+      animation-delay: 3.5s;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .container {
+      width: 90%;
+      max-width: 600px;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(15px);
+      padding: 30px;
+      border-radius: 25px;
+      box-shadow: 0 0 50px rgba(0,0,0,0.7);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+
     p {
-      color: #ccc;
+      color: #aaa;
       margin-bottom: 20px;
+      font-size: 14px;
     }
 
     textarea {
-      width: 80%;
-      height: 120px;
-      margin: 10px;
-      padding: 15px;
-      border-radius: 10px;
+      width: 100%;
+      height: 110px;
+      border-radius: 15px;
       border: none;
-      font-size: 16px;
+      padding: 15px;
+      margin-bottom: 10px;
+      resize: none;
+      font-size: 14px;
+      outline: none;
     }
 
     select {
-      padding: 10px;
-      border-radius: 8px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
       border: none;
-      margin: 10px;
+      margin-bottom: 10px;
+      font-size: 14px;
     }
 
     button {
-      padding: 12px 25px;
-      background: #00c896;
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
       border: none;
-      border-radius: 8px;
+      background: linear-gradient(135deg, #00c896, #00a87d);
       color: white;
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
       transition: 0.3s;
     }
 
     button:hover {
-      background: #00a87d;
+      transform: scale(1.05);
+      box-shadow: 0 0 15px #00c896;
     }
 
-    h2 {
-      margin-top: 30px;
+    .copy-btn {
+      margin-top: 10px;
+      background: #2b2b2b;
     }
+
+    .swap-btn {
+      margin-bottom: 10px;
+      background: #1f1f1f;
+    }
+
+    .loading {
+      margin-top: 10px;
+      display: none;
+      font-size: 13px;
+      color: #ccc;
+    }
+
+    .footer {
+      margin-top: 15px;
+      font-size: 11px;
+      color: #666;
+    }
+
   </style>
 </head>
 
 <body>
 
-  <h1>🌍 Tradutor de Cardápios</h1>
-  <p>Digite o texto do cardápio em português abaixo e escolha o idioma para traduzir.</p>
+<!-- INTRO -->
+<div class="intro">
+  <h1>🍽️ Tradutor de Cardápios</h1>
+  <p>Sua fome é a nossa solução.<br>Entenda qualquer cardápio, em qualquer lugar do mundo.</p>
+</div>
 
-  <textarea id="inputText" placeholder="Ex: arroz, feijão, carne, suco..."></textarea><br>
+<!-- APP -->
+<div class="app">
+  <div class="container">
 
-  <select id="language">
-    <option value="en">Inglês</option>
-    <option value="es">Espanhol</option>
-    <option value="fr">Francês</option>
-  </select><br>
+    <h2>Traduzir Cardápio</h2>
+    <p>Escolha o idioma de origem e para qual deseja traduzir.</p>
 
-  <button onclick="traduzir()">Traduzir</button>
+    <textarea id="inputText" placeholder="Digite o texto do cardápio..."></textarea>
 
-  <h2>Tradução:</h2>
-  <textarea id="outputText" readonly></textarea>
+    <select id="fromLang">
+      <option value="pt">Português</option>
+      <option value="en">Inglês</option>
+      <option value="es">Espanhol</option>
+      <option value="fr">Francês</option>
+    </select>
 
-  <script>
-    async function traduzir() {
-      let texto = document.getElementById("inputText").value;
-      let idioma = document.getElementById("language").value;
+    <button class="swap-btn" onclick="trocarIdiomas()">Trocar idiomas</button>
 
-      let response = await fetch("https://api.mymemory.translated.net/get?q=" 
-        + texto + "&langpair=pt|" + idioma);
+    <select id="toLang">
+      <option value="en">Inglês</option>
+      <option value="pt">Português</option>
+      <option value="es">Espanhol</option>
+      <option value="fr">Francês</option>
+    </select>
 
-      let data = await response.json();
+    <button onclick="traduzir()">Traduzir</button>
 
-      document.getElementById("outputText").value = data.responseData.translatedText;
-    }
-  </script>
+    <div class="loading" id="loading">Traduzindo...</div>
+
+    <textarea id="outputText" placeholder="Resultado..." readonly></textarea>
+
+    <button class="copy-btn" onclick="copiarTexto()">Copiar tradução</button>
+
+    <div class="footer">
+      © Tradutor inteligente para viajantes
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function traduzir() {
+  let texto = document.getElementById("inputText").value;
+  let from = document.getElementById("fromLang").value;
+  let to = document.getElementById("toLang").value;
+
+  let loading = document.getElementById("loading");
+  loading.style.display = "block";
+
+  let response = await fetch("https://api.mymemory.translated.net/get?q=" 
+    + texto + "&langpair=" + from + "|" + to);
+
+  let data = await response.json();
+
+  document.getElementById("outputText").value = data.responseData.translatedText;
+
+  loading.style.display = "none";
+}
+
+function copiarTexto() {
+  let texto = document.getElementById("outputText");
+  texto.select();
+  document.execCommand("copy");
+  alert("Copiado!");
+}
+
+function trocarIdiomas() {
+  let from = document.getElementById("fromLang");
+  let to = document.getElementById("toLang");
+
+  let temp = from.value;
+  from.value = to.value;
+  to.value = temp;
+}
+</script>
 
 </body>
 </html>
