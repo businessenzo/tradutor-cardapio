@@ -4,27 +4,30 @@
   <meta charset="UTF-8">
   <title>Tradutor de Cardápio</title>
 
+  <!-- Fonte bonita -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: "Segoe UI", sans-serif;
+      font-family: 'Poppins', sans-serif;
     }
 
     body {
-      background: linear-gradient(135deg, #0f0f0f, #1f1f2e);
+      background: linear-gradient(135deg, #1a0033, #3a0066);
       color: white;
       height: 100vh;
       overflow: hidden;
     }
 
-    /* SPLASH SCREEN */
+    /* INTRO */
     .intro {
       position: fixed;
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, #00c896, #004d40);
+      background: linear-gradient(135deg, #6a00ff, #a100ff);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -36,21 +39,17 @@
     }
 
     .intro h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
+      font-size: 34px;
     }
 
     .intro p {
       font-size: 18px;
       max-width: 400px;
-      line-height: 1.4;
+      margin-top: 10px;
     }
 
     @keyframes fadeOut {
-      to {
-        opacity: 0;
-        visibility: hidden;
-      }
+      to { opacity: 0; visibility: hidden; }
     }
 
     /* APP */
@@ -70,23 +69,23 @@
 
     .container {
       width: 90%;
-      max-width: 600px;
+      max-width: 650px;
       background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(15px);
+      backdrop-filter: blur(20px);
       padding: 30px;
       border-radius: 25px;
-      box-shadow: 0 0 50px rgba(0,0,0,0.7);
+      box-shadow: 0 0 60px rgba(0,0,0,0.7);
       text-align: center;
     }
 
     h2 {
-      margin-bottom: 10px;
       font-size: 22px;
+      margin-bottom: 10px;
     }
 
     p {
-      color: #aaa;
-      margin-bottom: 20px;
+      color: #ccc;
+      margin-bottom: 15px;
       font-size: 14px;
     }
 
@@ -98,7 +97,6 @@
       padding: 15px;
       margin-bottom: 10px;
       resize: none;
-      font-size: 14px;
       outline: none;
     }
 
@@ -108,7 +106,6 @@
       border-radius: 12px;
       border: none;
       margin-bottom: 10px;
-      font-size: 14px;
     }
 
     button {
@@ -116,7 +113,7 @@
       padding: 14px;
       border-radius: 12px;
       border: none;
-      background: linear-gradient(135deg, #00c896, #00a87d);
+      background: linear-gradient(135deg, #a100ff, #6a00ff);
       color: white;
       font-size: 15px;
       cursor: pointer;
@@ -125,30 +122,24 @@
 
     button:hover {
       transform: scale(1.05);
-      box-shadow: 0 0 15px #00c896;
+      box-shadow: 0 0 20px #a100ff;
     }
 
-    .copy-btn {
-      margin-top: 10px;
+    .secondary {
       background: #2b2b2b;
-    }
-
-    .swap-btn {
-      margin-bottom: 10px;
-      background: #1f1f1f;
+      margin-top: 10px;
     }
 
     .loading {
       margin-top: 10px;
       display: none;
       font-size: 13px;
-      color: #ccc;
     }
 
     .footer {
       margin-top: 15px;
       font-size: 11px;
-      color: #666;
+      color: #777;
     }
 
   </style>
@@ -158,18 +149,18 @@
 
 <!-- INTRO -->
 <div class="intro">
-  <h1>🍽️ Tradutor de Cardápios</h1>
-  <p>Sua fome é a nossa solução.<br>Entenda qualquer cardápio, em qualquer lugar do mundo.</p>
+  <h1>🍝 Tradutor de Cardápios</h1>
+  <p>Sua fome é a nossa solução.<br>Descubra exatamente o que pedir, sem erros.</p>
 </div>
 
 <!-- APP -->
 <div class="app">
   <div class="container">
 
-    <h2>Traduzir Cardápio</h2>
-    <p>Escolha o idioma de origem e para qual deseja traduzir.</p>
+    <h2>O que você quer fazer?</h2>
+    <p>Digite algo do cardápio ou descubra o que pedir.</p>
 
-    <textarea id="inputText" placeholder="Digite o texto do cardápio..."></textarea>
+    <textarea id="inputText" placeholder="Ex: pasta, chicken, arroz..."></textarea>
 
     <select id="fromLang">
       <option value="pt">Português</option>
@@ -177,8 +168,6 @@
       <option value="es">Espanhol</option>
       <option value="fr">Francês</option>
     </select>
-
-    <button class="swap-btn" onclick="trocarIdiomas()">Trocar idiomas</button>
 
     <select id="toLang">
       <option value="en">Inglês</option>
@@ -189,14 +178,16 @@
 
     <button onclick="traduzir()">Traduzir</button>
 
-    <div class="loading" id="loading">Traduzindo...</div>
+    <button class="secondary" onclick="sugerir()">🍽️ Sugerir pedido</button>
+
+    <div class="loading" id="loading">Processando...</div>
 
     <textarea id="outputText" placeholder="Resultado..." readonly></textarea>
 
-    <button class="copy-btn" onclick="copiarTexto()">Copiar tradução</button>
+    <button class="secondary" onclick="copiarTexto()">Copiar</button>
 
     <div class="footer">
-      © Tradutor inteligente para viajantes
+      Criado por businessenzo • GitHub
     </div>
 
   </div>
@@ -228,14 +219,26 @@ function copiarTexto() {
   alert("Copiado!");
 }
 
-function trocarIdiomas() {
-  let from = document.getElementById("fromLang");
-  let to = document.getElementById("toLang");
+function sugerir() {
+  let sugestoes = [
+    "🍝 Pasta italiana",
+    "🍔 Hambúrguer artesanal",
+    "🍣 Sushi",
+    "🥗 Salada saudável",
+    "🍗 Frango grelhado"
+  ];
 
-  let temp = from.value;
-  from.value = to.value;
-  to.value = temp;
+  let random = sugestoes[Math.floor(Math.random() * sugestoes.length)];
+  document.getElementById("outputText").value = random;
 }
+
+/* ENTER PARA TRADUZIR */
+document.getElementById("inputText").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    traduzir();
+  }
+});
 </script>
 
 </body>
