@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Tradutor de Cardápio</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f0f0f;
+      color: white;
+      text-align: center;
+      padding: 40px;
+    }
+    textarea {
+      width: 80%;
+      height: 150px;
+      margin: 10px;
+      padding: 10px;
+    }
+    select, button {
+      padding: 10px;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🍽️ Tradutor de Cardápio</h1>
+
+  <textarea id="inputText" placeholder="Cole o cardápio aqui..."></textarea><br>
+
+  <select id="language">
+    <option value="en">Inglês</option>
+    <option value="es">Espanhol</option>
+    <option value="fr">Francês</option>
+  </select><br>
+
+  <button onclick="traduzir()">Traduzir</button>
+
+  <h2>Resultado:</h2>
+  <textarea id="outputText" readonly></textarea>
+
+  <script>
+    async function traduzir() {
+      let texto = document.getElementById("inputText").value;
+      let idioma = document.getElementById("language").value;
+
+      let response = await fetch("https://api.mymemory.translated.net/get?q=" 
+        + texto + "&langpair=pt|" + idioma);
+
+      let data = await response.json();
+
+      document.getElementById("outputText").value = data.responseData.translatedText;
+    }
+  </script>
+
+</body>
+</html>
