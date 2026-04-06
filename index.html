@@ -3,31 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <title>Tradutor de Cardápio</title>
+
   <style>
     body {
-      font-family: Arial;
-      background: #0f0f0f;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #121212);
       color: white;
       text-align: center;
       padding: 40px;
     }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #ccc;
+      margin-bottom: 20px;
+    }
+
     textarea {
       width: 80%;
-      height: 150px;
+      height: 120px;
       margin: 10px;
-      padding: 10px;
+      padding: 15px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
     }
-    select, button {
+
+    select {
       padding: 10px;
+      border-radius: 8px;
+      border: none;
       margin: 10px;
+    }
+
+    button {
+      padding: 12px 25px;
+      background: #00c896;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #00a87d;
+    }
+
+    h2 {
+      margin-top: 30px;
     }
   </style>
 </head>
+
 <body>
 
-  <h1>🍽️ Tradutor de Cardápio</h1>
+  <h1>🌍 Tradutor de Cardápios</h1>
+  <p>Digite o texto do cardápio em português abaixo e escolha o idioma para traduzir.</p>
 
-  <textarea id="inputText" placeholder="Cole o cardápio aqui..."></textarea><br>
+  <textarea id="inputText" placeholder="Ex: arroz, feijão, carne, suco..."></textarea><br>
 
   <select id="language">
     <option value="en">Inglês</option>
@@ -37,7 +75,7 @@
 
   <button onclick="traduzir()">Traduzir</button>
 
-  <h2>Resultado:</h2>
+  <h2>Tradução:</h2>
   <textarea id="outputText" readonly></textarea>
 
   <script>
