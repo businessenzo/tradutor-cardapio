@@ -256,40 +256,110 @@ footer a:hover{color:#fff}
 /* ── Responsive ── */
 @media(max-width:640px){.areas{grid-template-columns:1fr}}
 
+/* ── Mobile: 480px and below ── */
 @media(max-width:480px){
-  /* Header: logo left, badge right, NO overlap */
-  header{padding:0 14px;height:52px;gap:10px}
-  .logo{
-    font-size:clamp(.65rem,4.2vw,.9rem);
-    letter-spacing:.05em;
-    max-width:calc(100vw - 130px);
+
+  /* Prevent ALL horizontal overflow */
+  html, body { overflow-x:hidden; max-width:100vw; }
+
+  /* ── Header: logo left, badge right, no overlap, fixed height ── */
+  header{
+    padding:0 14px;
+    height:50px;
+    gap:8px;
+    justify-content:space-between;
   }
-  .hbadge{font-size:.54rem;padding:4px 9px;gap:4px;letter-spacing:.12em}
-  .hbadge::before{width:4px;height:4px}
+  .logo{
+    /* Scale gracefully — "BUSINESSENZO" fits even at 320px */
+    font-size:clamp(.6rem, 3.5vw, .85rem);
+    letter-spacing:.04em;
+    white-space:nowrap;
+    max-width:calc(100vw - 120px);
+    flex-shrink:1;
+    min-width:0;
+  }
+  .hbadge{
+    font-size:.52rem;
+    padding:4px 8px;
+    gap:3px;
+    letter-spacing:.1em;
+    flex-shrink:0;
+  }
+  .hbadge::before{ width:4px; height:4px; }
 
-  /* Hero */
-  .hero{padding:36px 16px 24px}
-  .eyebrow{font-size:.6rem;padding:5px 14px;letter-spacing:.14em}
-  .hero h1{font-size:clamp(1.55rem,7.5vw,2.2rem);letter-spacing:-.025em}
-  .hero p{font-size:.88rem;line-height:1.65}
+  /* ── Hero: perfectly centred, generous breathing room ── */
+  .hero{
+    padding:32px 20px 20px;
+    text-align:center;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .eyebrow{
+    font-size:.58rem;
+    padding:5px 12px;
+    letter-spacing:.12em;
+    margin-bottom:14px;
+    /* Never wider than screen */
+    max-width:calc(100vw - 40px);
+    white-space:normal;
+    text-align:center;
+  }
+  .hero h1{
+    /* Title stays on two lines, fully visible, centred */
+    font-size:clamp(1.45rem, 7vw, 2rem);
+    letter-spacing:-.02em;
+    line-height:1.1;
+    margin-bottom:12px;
+    word-break:keep-all;
+    overflow-wrap:break-word;
+  }
+  .hero p{
+    font-size:.84rem;
+    line-height:1.6;
+    max-width:100%;
+    padding:0 4px;
+  }
 
-  /* Wrap & layout */
-  .wrap{padding:0 16px 56px}
-  .lang-bar{flex-direction:column;align-items:stretch;gap:10px}
-  .swap-btn{display:none}
-  textarea{min-height:160px;font-size:.9rem;padding:14px}
+  /* ── Wrap ── */
+  .wrap{ padding:0 14px 50px; }
 
-  /* Buttons */
-  .actions{flex-direction:column;gap:8px}
-  .btn{width:100%;padding:14px 20px;font-size:.88rem}
+  /* ── Lang bar stacks vertically ── */
+  .lang-bar{ flex-direction:column; align-items:stretch; gap:10px; margin-bottom:14px; }
+  .swap-btn{ display:none; }
 
-  /* Footer */
-  footer{padding:20px 16px;font-size:.7rem}
+  /* ── Text areas ── */
+  textarea{ min-height:150px; font-size:.88rem; padding:13px; }
+
+  /* ── Actions: buttons stack, full width, centred ── */
+  .actions{
+    flex-direction:column;
+    gap:8px;
+    margin-top:14px;
+    align-items:stretch;
+  }
+  .btn{
+    width:100%;
+    padding:14px 18px;
+    font-size:.86rem;
+    justify-content:center;
+    white-space:normal;
+    text-align:center;
+    line-height:1.3;
+  }
+
+  /* ── Footer ── */
+  footer{ padding:18px 14px; font-size:.68rem; }
 }
 
+/* ── Very small screens: 360px ── */
 @media(max-width:360px){
-  .logo{font-size:.62rem;letter-spacing:.04em}
-  .hbadge{display:none}
+  .logo{
+    font-size:clamp(.55rem, 3.2vw, .75rem);
+    letter-spacing:.03em;
+  }
+  .hbadge{ display:none; }
+  .hero h1{ font-size:clamp(1.3rem, 7.5vw, 1.7rem); }
+  .hero p{ font-size:.8rem; }
 }
 </style>
 </head>
