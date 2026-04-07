@@ -1,1257 +1,486 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MenuLens — Tradutor de Cardápios</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
-
-  <style>
-    /* ============================================
-       RESET & TOKENS
-    ============================================ */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:          #0a0b0f;
-      --surface:     #111318;
-      --surface-2:   #181b23;
-      --border:      rgba(255,255,255,0.07);
-      --border-hi:   rgba(255,255,255,0.14);
-
-      --amber:       #f5a623;
-      --amber-dim:   rgba(245,166,35,0.12);
-      --amber-glow:  rgba(245,166,35,0.3);
-
-      --teal:        #00d2c8;
-      --teal-dim:    rgba(0,210,200,0.10);
-
-      --text:        #f0efe8;
-      --text-muted:  #7a7d8a;
-      --text-subtle: #4a4d5a;
-
-      --radius:      16px;
-      --radius-sm:   10px;
-      --radius-xs:   6px;
-      --shadow:      0 8px 40px rgba(0,0,0,0.55);
-      --shadow-sm:   0 2px 12px rgba(0,0,0,0.35);
-
-      --transition:  0.22s cubic-bezier(0.4,0,0.2,1);
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* ============================================
-       SPLASH SCREEN
-    ============================================ */
-    #splash {
-      position: fixed; inset: 0; z-index: 9999;
-      background: var(--bg);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 20px;
-      transition: opacity 0.6s ease, visibility 0.6s ease;
-    }
-
-    #splash.hidden { opacity: 0; visibility: hidden; }
-
-    .splash-logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: clamp(2.2rem, 6vw, 3.5rem);
-      letter-spacing: -0.03em;
-      color: var(--text);
-    }
-
-    .splash-logo span {
-      color: var(--amber);
-    }
-
-    .splash-bar {
-      width: 180px;
-      height: 3px;
-      background: var(--surface-2);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .splash-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--amber), var(--teal));
-      border-radius: 99px;
-      animation: splashLoad 1.6s cubic-bezier(0.4,0,0.2,1) forwards;
-    }
-
-    @keyframes splashLoad {
-      from { width: 0% }
-      to   { width: 100% }
-    }
-
-    .splash-tag {
-      font-size: 0.78rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
-    /* ============================================
-       BACKGROUND DECORATION
-    ============================================ */
-    .bg-orbs {
-      position: fixed; inset: 0; pointer-events: none; z-index: 0;
-      overflow: hidden;
-    }
-
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(110px);
-      opacity: 0.18;
-    }
-
-    .orb-1 {
-      width: 520px; height: 520px;
-      background: var(--amber);
-      top: -160px; right: -120px;
-      animation: driftA 18s ease-in-out infinite alternate;
-    }
-
-    .orb-2 {
-      width: 400px; height: 400px;
-      background: var(--teal);
-      bottom: -100px; left: -80px;
-      animation: driftB 22s ease-in-out infinite alternate;
-    }
-
-    .orb-3 {
-      width: 260px; height: 260px;
-      background: #a78bfa;
-      top: 40%; left: 45%;
-      opacity: 0.10;
-      animation: driftA 28s ease-in-out infinite alternate-reverse;
-    }
-
-    @keyframes driftA {
-      from { transform: translate(0, 0) scale(1); }
-      to   { transform: translate(40px, 30px) scale(1.07); }
-    }
-    @keyframes driftB {
-      from { transform: translate(0, 0) scale(1); }
-      to   { transform: translate(-30px, -25px) scale(1.05); }
-    }
-
-    /* ============================================
-       LAYOUT
-    ============================================ */
-    .page {
-      position: relative; z-index: 1;
-      min-height: 100vh;
-      display: flex; flex-direction: column;
-    }
-
-    /* ============================================
-       HEADER
-    ============================================ */
-    header {
-      padding: 24px 32px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(20px);
-      background: rgba(10,11,15,0.6);
-      position: sticky; top: 0; z-index: 100;
-    }
-
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 1.3rem;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      text-decoration: none;
-    }
-
-    .logo .accent { color: var(--amber); }
-
-    .header-badge {
-      font-size: 0.68rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      padding: 5px 12px;
-      border-radius: 99px;
-    }
-
-    /* ============================================
-       HERO
-    ============================================ */
-    .hero {
-      padding: 72px 32px 48px;
-      max-width: 860px;
-      margin: 0 auto;
-      width: 100%;
-      text-align: center;
-    }
-
-    .hero-eyebrow {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-size: 0.72rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--amber);
-      background: var(--amber-dim);
-      border: 1px solid rgba(245,166,35,0.2);
-      padding: 6px 16px;
-      border-radius: 99px;
-      margin-bottom: 24px;
-    }
-
-    .hero-eyebrow::before {
-      content: '';
-      width: 6px; height: 6px;
-      background: var(--amber);
-      border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.4; transform: scale(0.8); }
-    }
-
-    .hero h1 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: clamp(2rem, 5.5vw, 3.6rem);
-      line-height: 1.08;
-      letter-spacing: -0.03em;
-      color: var(--text);
-      margin-bottom: 18px;
-    }
-
-    .hero h1 em {
-      font-style: normal;
-      background: linear-gradient(135deg, var(--amber) 0%, var(--teal) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero p {
-      font-size: 1.05rem;
-      color: var(--text-muted);
-      line-height: 1.65;
-      max-width: 520px;
-      margin: 0 auto;
-      font-weight: 300;
-    }
-
-    /* ============================================
-       CARD / GLASS PANEL
-    ============================================ */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      transition: border-color var(--transition);
-    }
-
-    .card:focus-within {
-      border-color: var(--border-hi);
-    }
-
-    /* ============================================
-       MAIN TRANSLATOR PANEL
-    ============================================ */
-    .translator-wrap {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 0 32px 80px;
-      width: 100%;
-    }
-
-    /* Language bar */
-    .lang-bar {
-      display: flex; align-items: center; gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .lang-group {
-      flex: 1;
-      display: flex; flex-direction: column; gap: 6px;
-    }
-
-    .lang-label {
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-subtle);
-      font-weight: 500;
-    }
-
-    .lang-select-wrap {
-      position: relative;
-    }
-
-    .lang-select-wrap svg {
-      position: absolute; right: 14px; top: 50%;
-      transform: translateY(-50%);
-      pointer-events: none;
-      color: var(--text-muted);
-    }
-
-    select {
-      width: 100%;
-      appearance: none;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.88rem;
-      font-weight: 500;
-      padding: 12px 40px 12px 16px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: border-color var(--transition), background var(--transition);
-      outline: none;
-    }
-
-    select:hover { border-color: var(--border-hi); }
-    select:focus { border-color: rgba(245,166,35,0.4); background: rgba(24,27,35,0.9); }
-
-    select option { background: var(--surface-2); color: var(--text); }
-
-    /* Swap button */
-    .swap-btn {
-      flex-shrink: 0;
-      margin-top: 22px;
-      width: 44px; height: 44px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      color: var(--text-muted);
-      transition: all var(--transition);
-    }
-
-    .swap-btn:hover {
-      border-color: var(--amber);
-      color: var(--amber);
-      background: var(--amber-dim);
-      transform: rotate(180deg);
-    }
-
-    /* Text areas */
-    .areas-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-
-    @media (max-width: 620px) {
-      .areas-grid { grid-template-columns: 1fr; }
-    }
-
-    .area-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      transition: border-color var(--transition);
-      display: flex; flex-direction: column;
-    }
-
-    .area-card:focus-within {
-      border-color: rgba(245,166,35,0.35);
-      box-shadow: 0 0 0 3px rgba(245,166,35,0.07);
-    }
-
-    .area-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface-2);
-    }
-
-    .area-header-left {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .area-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-    }
-
-    .dot-origin { background: var(--amber); }
-    .dot-target { background: var(--teal); }
-
-    .char-count {
-      font-size: 0.72rem;
-      color: var(--text-subtle);
-      transition: color var(--transition);
-    }
-
-    .char-count.warn { color: #f87171; }
-
-    textarea {
-      flex: 1;
-      width: 100%;
-      min-height: 220px;
-      background: transparent;
-      border: none;
-      outline: none;
-      resize: vertical;
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1rem;
-      font-weight: 300;
-      line-height: 1.7;
-      padding: 18px;
-      caret-color: var(--amber);
-    }
-
-    textarea::placeholder { color: var(--text-subtle); }
-
-    /* Output area */
-    .area-card.output-card { position: relative; }
-
-    .output-card textarea {
-      color: var(--teal);
-      font-style: italic;
-    }
-
-    /* Copy button */
-    .copy-btn {
-      position: relative;
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 500;
-      padding: 5px 12px;
-      border-radius: var(--radius-xs);
-      cursor: pointer;
-      display: flex; align-items: center; gap: 6px;
-      transition: all var(--transition);
-    }
-
-    .copy-btn:hover {
-      border-color: var(--teal);
-      color: var(--teal);
-      background: var(--teal-dim);
-    }
-
-    .copy-btn.copied {
-      border-color: #4ade80;
-      color: #4ade80;
-      background: rgba(74,222,128,0.08);
-    }
-
-    /* ============================================
-       LOADING OVERLAY
-    ============================================ */
-    .loading-overlay {
-      position: absolute; inset: 0;
-      background: rgba(10,11,15,0.72);
-      backdrop-filter: blur(4px);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 14px;
-      opacity: 0; visibility: hidden;
-      transition: opacity var(--transition), visibility var(--transition);
-      border-radius: var(--radius);
-      z-index: 10;
-    }
-
-    .loading-overlay.active {
-      opacity: 1; visibility: visible;
-    }
-
-    .loader-ring {
-      width: 42px; height: 42px;
-      border: 3px solid var(--border);
-      border-top-color: var(--teal);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .loader-text {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      letter-spacing: 0.08em;
-    }
-
-    /* ============================================
-       ACTION BUTTONS
-    ============================================ */
-    .actions {
-      display: flex; gap: 12px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-      padding: 14px 28px;
-      border-radius: var(--radius-sm);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      border: none;
-      outline: none;
-      transition: all var(--transition);
-      position: relative;
-      overflow: hidden;
-      white-space: nowrap;
-      letter-spacing: 0.01em;
-    }
-
-    .btn::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: white;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-
-    .btn:active::after { opacity: 0.06; }
-
-    /* Primary */
-    .btn-primary {
-      background: linear-gradient(135deg, var(--amber) 0%, #e0921a 100%);
-      color: #0a0b0f;
-      font-weight: 600;
-      box-shadow: 0 4px 24px var(--amber-glow);
-      flex: 1;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px var(--amber-glow);
-    }
-
-    .btn-primary:active { transform: translateY(0); }
-
-    /* Secondary */
-    .btn-secondary {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      border-color: var(--border-hi);
-      background: var(--surface);
-      transform: translateY(-2px);
-    }
-
-    .btn-secondary:active { transform: translateY(0); }
-
-    /* Ghost */
-    .btn-ghost {
-      background: transparent;
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-      padding: 14px 22px;
-    }
-
-    .btn-ghost:hover {
-      color: var(--text);
-      border-color: var(--border-hi);
-    }
-
-    /* Icon inside btn */
-    .btn-icon {
-      font-size: 1rem;
-      display: inline-flex;
-      transition: transform var(--transition);
-    }
-
-    .btn:hover .btn-icon { transform: scale(1.15); }
-
-    /* ============================================
-       SUGGESTION CHIP
-    ============================================ */
-    #suggestion-box {
-      margin-top: 18px;
-      padding: 18px 20px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      display: none;
-      animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1);
-    }
-
-    #suggestion-box.visible { display: block; }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .sug-header {
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-      display: flex; align-items: center; gap: 8px;
-    }
-
-    .sug-header::before {
-      content: '✦';
-      color: var(--amber);
-      font-size: 0.6rem;
-    }
-
-    .sug-chips {
-      display: flex; flex-wrap: wrap; gap: 8px;
-    }
-
-    .sug-chip {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem;
-      padding: 8px 16px;
-      border-radius: 99px;
-      cursor: pointer;
-      transition: all var(--transition);
-      display: flex; align-items: center; gap: 6px;
-    }
-
-    .sug-chip:hover {
-      border-color: var(--amber);
-      color: var(--amber);
-      background: var(--amber-dim);
-      transform: translateY(-1px);
-    }
-
-    .sug-translated {
-      margin-top: 14px;
-      padding: 14px 16px;
-      background: var(--teal-dim);
-      border: 1px solid rgba(0,210,200,0.15);
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      color: var(--teal);
-      display: none;
-      animation: slideUp 0.25s ease;
-    }
-
-    .sug-translated.visible {
-      display: flex; align-items: center; gap: 10px;
-    }
-
-    .sug-translated strong {
-      font-weight: 600;
-    }
-
-    /* ============================================
-       TOAST
-    ============================================ */
-    .toast-container {
-      position: fixed; bottom: 28px; left: 50%;
-      transform: translateX(-50%);
-      z-index: 9998;
-      display: flex; flex-direction: column; gap: 8px;
-      align-items: center;
-    }
-
-    .toast {
-      background: var(--surface-2);
-      border: 1px solid var(--border-hi);
-      color: var(--text);
-      font-size: 0.85rem;
-      font-family: 'DM Sans', sans-serif;
-      padding: 12px 22px;
-      border-radius: 99px;
-      box-shadow: var(--shadow-sm);
-      white-space: nowrap;
-      animation: toastIn 0.3s cubic-bezier(0.4,0,0.2,1),
-                 toastOut 0.3s cubic-bezier(0.4,0,0.2,1) 2.4s forwards;
-      display: flex; align-items: center; gap: 8px;
-    }
-
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateY(12px) scale(0.96); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    @keyframes toastOut {
-      from { opacity: 1; transform: translateY(0) scale(1); }
-      to   { opacity: 0; transform: translateY(-8px) scale(0.96); }
-    }
-
-    /* ============================================
-       FOOTER
-    ============================================ */
-    footer {
-      margin-top: auto;
-      padding: 28px 32px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      font-size: 0.78rem;
-      color: var(--text-subtle);
-    }
-
-    footer a {
-      color: var(--amber);
-      text-decoration: none;
-    }
-
-    footer a:hover { text-decoration: underline; }
-
-    /* ============================================
-       DETECT TAG
-    ============================================ */
-    .detect-tag {
-      font-size: 0.72rem;
-      color: var(--teal);
-      background: var(--teal-dim);
-      border: 1px solid rgba(0,210,200,0.2);
-      padding: 2px 10px;
-      border-radius: 99px;
-      display: none;
-    }
-
-    .detect-tag.visible { display: inline-flex; }
-
-    /* ============================================
-       MOBILE
-    ============================================ */
-    @media (max-width: 540px) {
-      header { padding: 16px 18px; }
-      .hero  { padding: 48px 18px 32px; }
-      .translator-wrap { padding: 0 18px 60px; }
-      .actions { flex-direction: column; }
-      .btn { width: 100%; }
-    }
-
-    /* ============================================
-       FADE IN PAGE
-    ============================================ */
-    .page { opacity: 0; transition: opacity 0.5s ease 0.2s; }
-    .page.ready { opacity: 1; }
-
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="BUSINESSENZO — Ferramenta profissional de tradução de cardápios para viagens internacionais. 100% gratuita."/>
+<title>BUSINESSENZO — Tradutor de Cardápios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0a0b0f;--surface:#111318;--surface-2:#181b23;
+--border:rgba(255,255,255,0.07);--border-hi:rgba(255,255,255,0.14);
+--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--amber-glow:rgba(245,166,35,0.28);
+--teal:#00d2c8;--teal-dim:rgba(0,210,200,0.10);
+--text:#f0efe8;--text-muted:#7a7d8a;--text-subtle:#4a4d5a;
+--radius:16px;--radius-sm:10px;--radius-xs:6px;
+--shadow:0 8px 40px rgba(0,0,0,0.55);--shadow-sm:0 2px 12px rgba(0,0,0,0.35);
+--tr:0.22s cubic-bezier(0.4,0,0.2,1);
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .6s ease,visibility .6s ease}
+#splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.sp-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.2rem,6vw,3.4rem);letter-spacing:-.03em}
+.sp-logo span{color:var(--amber)}
+.sp-bar{width:180px;height:3px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.sp-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--teal));border-radius:99px;animation:spLoad 1.7s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes spLoad{from{width:0}to{width:100%}}
+.sp-tag{font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted)}
+.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(110px);opacity:.18}
+.orb-1{width:520px;height:520px;background:var(--amber);top:-160px;right:-120px;animation:dA 18s ease-in-out infinite alternate}
+.orb-2{width:400px;height:400px;background:var(--teal);bottom:-100px;left:-80px;animation:dB 22s ease-in-out infinite alternate}
+.orb-3{width:260px;height:260px;background:#a78bfa;top:40%;left:45%;opacity:.10;animation:dA 28s ease-in-out infinite alternate-reverse}
+@keyframes dA{from{transform:translate(0,0) scale(1)}to{transform:translate(40px,30px) scale(1.07)}}
+@keyframes dB{from{transform:translate(0,0) scale(1)}to{transform:translate(-30px,-25px) scale(1.05)}}
+.page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;opacity:0;transition:opacity .5s ease .2s}
+.page.ready{opacity:1}
+header{padding:20px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);backdrop-filter:blur(20px);background:rgba(10,11,15,.6);position:sticky;top:0;z-index:100}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:.06em;text-decoration:none;background:linear-gradient(135deg,var(--text) 0%,var(--amber) 55%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-transform:uppercase}
+.logo .ac{background:none;-webkit-text-fill-color:unset;color:inherit}
+.hbadge{font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(245,166,35,.25);padding:5px 14px;border-radius:99px;display:flex;align-items:center;gap:6px}
+.hbadge::before{content:'';width:5px;height:5px;background:var(--amber);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+.hero{padding:64px 32px 44px;max-width:860px;margin:0 auto;width:100%;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(245,166,35,.2);padding:6px 16px;border-radius:99px;margin-bottom:22px}
+.eyebrow::before{content:'';width:6px;height:6px;background:var(--amber);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.hero h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2rem,5.5vw,3.8rem);line-height:1.06;letter-spacing:-.03em;margin-bottom:20px}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--amber) 0%,#ffcc70 45%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:1.05rem;color:var(--text-muted);line-height:1.72;max-width:540px;margin:0 auto;font-weight:300}
+.wrap{max-width:860px;margin:0 auto;padding:0 32px 80px;width:100%}
+.lang-bar{display:flex;align-items:flex-end;gap:12px;margin-bottom:14px}
+.lang-group{flex:1;display:flex;flex-direction:column;gap:6px}
+.lang-label{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-subtle);font-weight:500}
+.sel-wrap{position:relative}
+.sel-wrap svg{position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted)}
+select{width:100%;appearance:none;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;padding:12px 40px 12px 16px;border-radius:var(--radius-sm);cursor:pointer;transition:border-color var(--tr),background var(--tr);outline:none}
+select:hover{border-color:var(--border-hi)}
+select:focus{border-color:rgba(245,166,35,.4);background:rgba(24,27,35,.9)}
+select option{background:var(--surface-2);color:var(--text)}
+.swap-btn{flex-shrink:0;width:44px;height:44px;background:var(--surface-2);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);transition:all var(--tr)}
+.swap-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);transform:rotate(180deg)}
+.areas{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.acard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:border-color var(--tr)}
+.acard:focus-within{border-color:rgba(245,166,35,.35);box-shadow:0 0 0 3px rgba(245,166,35,.07)}
+.acard.out:focus-within{border-color:rgba(0,210,200,.35);box-shadow:0 0 0 3px rgba(0,210,200,.07)}
+.ahead{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+.ahead-l{display:flex;align-items:center;gap:8px;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:500}
+.dot{width:7px;height:7px;border-radius:50%}
+.dot-a{background:var(--amber)}
+.dot-t{background:var(--teal)}
+.char-c{font-size:.7rem;color:var(--text-subtle);transition:color var(--tr)}
+.char-c.warn{color:#f87171}
+.dtag{font-size:.7rem;color:var(--teal);background:var(--teal-dim);border:1px solid rgba(0,210,200,.2);padding:2px 10px;border-radius:99px;display:none}
+.dtag.on{display:inline-flex}
+.copy-btn{background:none;border:1px solid var(--border);color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:.73rem;font-weight:500;padding:5px 11px;border-radius:var(--radius-xs);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all var(--tr)}
+.copy-btn:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-dim)}
+.copy-btn.ok{border-color:#4ade80;color:#4ade80;background:rgba(74,222,128,.08)}
+textarea{flex:1;width:100%;min-height:220px;background:transparent;border:none;outline:none;resize:vertical;color:var(--text);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:300;line-height:1.7;padding:18px;caret-color:var(--amber)}
+textarea::placeholder{color:var(--text-subtle)}
+.out textarea{color:var(--teal);font-style:italic;transition:color .4s ease}
+.out textarea.filled{text-shadow:0 0 20px rgba(0,210,200,0.15)}
+.overlay{position:absolute;inset:0;background:rgba(10,11,15,.72);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;visibility:hidden;transition:opacity var(--tr),visibility var(--tr);border-radius:var(--radius);z-index:10}
+.overlay.on{opacity:1;visibility:visible}
+.out{position:relative}
+.ring{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ltxt{font-size:.78rem;color:var(--text-muted);letter-spacing:.08em}
+.actions{display:flex;gap:12px;margin-top:18px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 26px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.875rem;font-weight:500;cursor:pointer;border:none;outline:none;transition:all var(--tr);position:relative;overflow:hidden;white-space:nowrap;letter-spacing:.01em}
+.btn::after{content:'';position:absolute;inset:0;background:white;opacity:0;transition:opacity .15s ease}
+.btn:active::after{opacity:.06}
+.btn-p{background:linear-gradient(135deg,var(--amber) 0%,#ffb84d 50%,#e0921a 100%);background-size:200% 200%;color:#0a0b0f;font-weight:700;box-shadow:0 4px 28px var(--amber-glow),0 1px 0 rgba(255,255,255,0.15) inset;flex:1;letter-spacing:.03em;animation:shimmer 4s ease-in-out infinite}
+@keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--amber-glow)}
+.btn-p:active{transform:translateY(0)}
+.btn-s{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--border-hi);transform:translateY(-2px)}
+.btn-s:active{transform:translateY(0)}
+.btn-g{background:transparent;color:var(--text-muted);border:1px solid var(--border);padding:13px 18px}
+.btn-g:hover{color:var(--text);border-color:var(--border-hi)}
+.bico{font-size:.95rem;transition:transform var(--tr)}
+.btn:hover .bico{transform:scale(1.15)}
+.sugbox{margin-top:18px;padding:18px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:none;animation:up .3s cubic-bezier(.4,0,.2,1)}
+.sugbox.on{display:block}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.sug-hd{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sug-hd::before{content:'✦';color:var(--amber);font-size:.6rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.84rem;padding:8px 16px;border-radius:99px;cursor:pointer;transition:all var(--tr);display:flex;align-items:center;gap:6px}
+.chip:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);transform:translateY(-1px)}
+.sug-res{margin-top:14px;padding:13px 16px;background:var(--teal-dim);border:1px solid rgba(0,210,200,.15);border-radius:var(--radius-sm);font-size:.88rem;color:var(--teal);display:none;animation:up .25s ease}
+.sug-res.on{display:flex;align-items:center;gap:10px}
+.toasts{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9998;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:var(--surface-2);border:1px solid var(--border-hi);color:var(--text);font-size:.84rem;font-family:'DM Sans',sans-serif;padding:11px 22px;border-radius:99px;box-shadow:var(--shadow-sm);white-space:nowrap;animation:tIn .3s cubic-bezier(.4,0,.2,1),tOut .3s cubic-bezier(.4,0,.2,1) 2.4s forwards}
+@keyframes tIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes tOut{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-8px) scale(.96)}}
+footer{margin-top:auto;padding:28px 32px;border-top:1px solid var(--border);text-align:center;font-size:.74rem;color:var(--text-subtle);letter-spacing:.04em}
+footer span{color:var(--text-muted)}
+footer a{color:var(--amber);text-decoration:none;transition:color var(--tr)}
+footer a:hover{color:var(--text)}
+@media(max-width:620px){.areas{grid-template-columns:1fr}}
+@media(max-width:540px){
+  header{padding:14px 18px}
+  .hero{padding:44px 18px 28px}
+  .wrap{padding:0 18px 60px}
+  .actions{flex-direction:column}
+  .btn{width:100%}
+  .lang-bar{flex-direction:column;align-items:stretch}
+  .swap-btn{display:none}
+  .hbadge{display:none}
+}
+</style>
 </head>
 <body>
 
-  <!-- ========== SPLASH ========== -->
-  <div id="splash">
-    <div class="splash-logo">Menu<span>Lens</span></div>
-    <div class="splash-bar"><div class="splash-fill"></div></div>
-    <div class="splash-tag">Tradução inteligente de cardápios</div>
-  </div>
+<div id="splash">
+  <div class="sp-logo">BUSINESS<span>ENZO</span></div>
+  <div class="sp-bar"><div class="sp-fill"></div></div>
+  <div class="sp-tag">Ferramenta profissional de tradução de cardápios</div>
+</div>
 
-  <!-- ========== BACKGROUND ========== -->
-  <div class="bg-orbs" aria-hidden="true">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
 
-  <!-- ========== PAGE ========== -->
-  <div class="page" id="page">
+<div class="page" id="page">
 
-    <!-- HEADER -->
-    <header>
-      <a class="logo" href="#">Menu<span class="accent">Lens</span></a>
-      <span class="header-badge">Powered by MyMemory API</span>
-    </header>
+  <header>
+    <a class="logo" href="#">BUSINESS<span class="ac">ENZO</span></a>
+    <span class="hbadge">Plataforma Gratuita</span>
+  </header>
 
-    <!-- HERO -->
-    <section class="hero">
-      <div class="hero-eyebrow">Tradução instantânea</div>
-      <h1>Entenda qualquer<br><em>cardápio do mundo</em></h1>
-      <p>Cole o texto do menu, escolha os idiomas e deixe o MenuLens fazer o resto. Perfeito para viagens, restaurantes e exploradores gastronômicos.</p>
-    </section>
+  <section class="hero">
+    <div class="eyebrow">Ferramenta profissional · 100% gratuita</div>
+    <h1>Entenda qualquer<br><em>cardápio do mundo</em></h1>
+    <p>Ferramenta profissional de tradução de cardápios para viagens internacionais — sem cadastro, sem limites, sem custo. Desenvolvida para quem exige o melhor.</p>
+  </section>
 
-    <!-- TRANSLATOR -->
-    <main class="translator-wrap">
+  <main class="wrap">
 
-      <!-- Language bar -->
-      <div class="lang-bar">
-        <div class="lang-group">
-          <span class="lang-label">Idioma de origem</span>
-          <div class="lang-select-wrap">
-            <select id="fromLang" aria-label="Idioma de origem">
-              <option value="auto">🔍 Detectar automaticamente</option>
-              <option value="pt">🇧🇷 Português</option>
-              <option value="en">🇺🇸 Inglês</option>
-              <option value="es">🇪🇸 Espanhol</option>
-              <option value="fr">🇫🇷 Francês</option>
-              <option value="it">🇮🇹 Italiano</option>
-              <option value="de">🇩🇪 Alemão</option>
-              <option value="ja">🇯🇵 Japonês</option>
-              <option value="zh">🇨🇳 Chinês</option>
-              <option value="ko">🇰🇷 Coreano</option>
-              <option value="ar">🇸🇦 Árabe</option>
-              <option value="ru">🇷🇺 Russo</option>
-              <option value="nl">🇳🇱 Holandês</option>
-              <option value="pl">🇵🇱 Polonês</option>
-              <option value="tr">🇹🇷 Turco</option>
-              <option value="th">🇹🇭 Tailandês</option>
-            </select>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-        </div>
-
-        <button class="swap-btn" id="swapBtn" title="Trocar idiomas" aria-label="Trocar idiomas">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/>
-          </svg>
-        </button>
-
-        <div class="lang-group">
-          <span class="lang-label">Idioma de destino</span>
-          <div class="lang-select-wrap">
-            <select id="toLang" aria-label="Idioma de destino">
-              <option value="pt">🇧🇷 Português</option>
-              <option value="en">🇺🇸 Inglês</option>
-              <option value="es">🇪🇸 Espanhol</option>
-              <option value="fr">🇫🇷 Francês</option>
-              <option value="it">🇮🇹 Italiano</option>
-              <option value="de">🇩🇪 Alemão</option>
-              <option value="ja">🇯🇵 Japonês</option>
-              <option value="zh">🇨🇳 Chinês</option>
-              <option value="ko">🇰🇷 Coreano</option>
-              <option value="ar">🇸🇦 Árabe</option>
-              <option value="ru">🇷🇺 Russo</option>
-              <option value="nl">🇳🇱 Holandês</option>
-              <option value="pl">🇵🇱 Polonês</option>
-              <option value="tr">🇹🇷 Turco</option>
-              <option value="th">🇹🇭 Tailandês</option>
-            </select>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
+    <div class="lang-bar">
+      <div class="lang-group">
+        <span class="lang-label">Idioma de origem</span>
+        <div class="sel-wrap">
+          <select id="fromLang">
+            <option value="auto">🔍 Detectar automaticamente</option>
+            <option value="pt">🇧🇷 Português</option>
+            <option value="en">🇺🇸 Inglês</option>
+            <option value="es">🇪🇸 Espanhol</option>
+            <option value="fr">🇫🇷 Francês</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="de">🇩🇪 Alemão</option>
+            <option value="ja">🇯🇵 Japonês</option>
+            <option value="zh">🇨🇳 Chinês</option>
+            <option value="ko">🇰🇷 Coreano</option>
+            <option value="ar">🇸🇦 Árabe</option>
+            <option value="ru">🇷🇺 Russo</option>
+            <option value="nl">🇳🇱 Holandês</option>
+            <option value="tr">🇹🇷 Turco</option>
+            <option value="th">🇹🇭 Tailandês</option>
+          </select>
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </div>
-
-      <!-- Text areas -->
-      <div class="areas-grid">
-
-        <!-- Input -->
-        <div class="area-card">
-          <div class="area-header">
-            <span class="area-header-left">
-              <span class="area-dot dot-origin"></span>
-              Texto original
-              <span class="detect-tag" id="detectTag">detectado</span>
-            </span>
-            <span class="char-count" id="charCount">0 / 1000</span>
-          </div>
-          <textarea
-            id="inputText"
-            placeholder="Cole aqui o texto do cardápio… ex: Grilled salmon with lemon butter sauce and seasonal vegetables"
-            maxlength="1000"
-            aria-label="Texto para tradução"
-          ></textarea>
-        </div>
-
-        <!-- Output -->
-        <div class="area-card output-card">
-          <div class="area-header">
-            <span class="area-header-left">
-              <span class="area-dot dot-target"></span>
-              Tradução
-            </span>
-            <button class="copy-btn" id="copyBtn" aria-label="Copiar tradução">
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <rect x="9" y="9" width="13" height="13" rx="2"/>
-                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-              </svg>
-              Copiar
-            </button>
-          </div>
-          <textarea
-            id="outputText"
-            placeholder="A tradução aparecerá aqui…"
-            readonly
-            aria-label="Resultado da tradução"
-          ></textarea>
-          <div class="loading-overlay" id="loadingOverlay">
-            <div class="loader-ring"></div>
-            <span class="loader-text">Traduzindo…</span>
-          </div>
-        </div>
-
-      </div><!-- /areas-grid -->
-
-      <!-- Actions -->
-      <div class="actions">
-        <button class="btn btn-primary" id="translateBtn">
-          <span class="btn-icon">⟶</span>
-          Traduzir agora
-        </button>
-        <button class="btn btn-secondary" id="suggestBtn">
-          <span class="btn-icon">✦</span>
-          Sugerir pedido
-        </button>
-        <button class="btn btn-ghost" id="clearBtn" title="Limpar">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path d="M3 6h18M19 6l-1 14H6L5 6M9 6V4h6v2"/>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Suggestion panel -->
-      <div id="suggestion-box" role="region" aria-label="Sugestões de pedidos">
-        <div class="sug-header">Sugestões populares para o destino</div>
-        <div class="sug-chips" id="sugChips"></div>
-        <div class="sug-translated" id="sugTranslated">
-          <span>🍽️</span>
-          <span id="sugTranslatedText"></span>
+      <button class="swap-btn" id="swapBtn" title="Trocar idiomas">
+        <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg>
+      </button>
+      <div class="lang-group">
+        <span class="lang-label">Idioma de destino</span>
+        <div class="sel-wrap">
+          <select id="toLang">
+            <option value="pt">🇧🇷 Português</option>
+            <option value="en">🇺🇸 Inglês</option>
+            <option value="es">🇪🇸 Espanhol</option>
+            <option value="fr">🇫🇷 Francês</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="de">🇩🇪 Alemão</option>
+            <option value="ja">🇯🇵 Japonês</option>
+            <option value="zh">🇨🇳 Chinês</option>
+            <option value="ko">🇰🇷 Coreano</option>
+            <option value="ar">🇸🇦 Árabe</option>
+            <option value="ru">🇷🇺 Russo</option>
+            <option value="nl">🇳🇱 Holandês</option>
+            <option value="tr">🇹🇷 Turco</option>
+            <option value="th">🇹🇭 Tailandês</option>
+          </select>
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </div>
+    </div>
 
-    </main><!-- /translator-wrap -->
+    <div class="areas">
+      <div class="acard">
+        <div class="ahead">
+          <span class="ahead-l">
+            <span class="dot dot-a"></span>
+            Texto original
+            <span class="dtag" id="dtag"></span>
+          </span>
+          <span class="char-c" id="charC">0 / 1000</span>
+        </div>
+        <textarea id="inp" placeholder="Cole aqui o texto do cardápio… ex: Grilled salmon with lemon butter sauce" maxlength="1000"></textarea>
+      </div>
+      <div class="acard out">
+        <div class="ahead">
+          <span class="ahead-l"><span class="dot dot-t"></span>Tradução</span>
+          <button class="copy-btn" id="copyBtn">
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copiar
+          </button>
+        </div>
+        <textarea id="out" placeholder="A tradução aparecerá aqui…" readonly></textarea>
+        <div class="overlay" id="ov">
+          <div class="ring"></div>
+          <span class="ltxt">Traduzindo…</span>
+        </div>
+      </div>
+    </div>
 
-    <footer>
-      <p>MenuLens &copy; 2025 — Tradução por <a href="https://mymemory.translated.net" target="_blank" rel="noopener">MyMemory API</a></p>
-    </footer>
+    <div class="actions">
+      <button class="btn btn-p" id="trBtn"><span class="bico">⟶</span>Traduzir agora — grátis</button>
+      <button class="btn btn-s" id="sugBtn"><span class="bico">✦</span>Sugerir pedido</button>
+      <button class="btn btn-g" id="clrBtn" title="Limpar">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6l-1 14H6L5 6M9 6V4h6v2"/></svg>
+      </button>
+    </div>
 
-  </div><!-- /page -->
+    <div class="sugbox" id="sugbox">
+      <div class="sug-hd">Sugestões populares para o destino</div>
+      <div class="chips" id="chips"></div>
+      <div class="sug-res" id="sugRes"><span>🍽️</span><span id="sugTxt"></span></div>
+    </div>
 
-  <!-- ========== TOAST ========== -->
-  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+  </main>
 
-  <!-- ============================================================
-       JAVASCRIPT
-  ============================================================ -->
-  <script>
-    /* ============================================
-       SPLASH SCREEN
-       Aguarda a barra completar (~1.7s) e some.
-    ============================================ */
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        document.getElementById('splash').classList.add('hidden');
-        document.getElementById('page').classList.add('ready');
-      }, 1800);
-    });
+  <footer>
+    <p><span>BUSINESSENZO</span> &copy; 2025 &nbsp;—&nbsp; Tradução por <a href="https://mymemory.translated.net" target="_blank" rel="noopener">MyMemory API</a></p>
+  </footer>
 
-    /* ============================================
-       ELEMENTOS DOM
-    ============================================ */
-    const inputText   = document.getElementById('inputText');
-    const outputText  = document.getElementById('outputText');
-    const fromLang    = document.getElementById('fromLang');
-    const toLang      = document.getElementById('toLang');
-    const translateBtn= document.getElementById('translateBtn');
-    const suggestBtn  = document.getElementById('suggestBtn');
-    const clearBtn    = document.getElementById('clearBtn');
-    const copyBtn     = document.getElementById('copyBtn');
-    const charCount   = document.getElementById('charCount');
-    const detectTag   = document.getElementById('detectTag');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const sugBox      = document.getElementById('suggestion-box');
-    const sugChips    = document.getElementById('sugChips');
-    const sugTranslated    = document.getElementById('sugTranslated');
-    const sugTranslatedText= document.getElementById('sugTranslatedText');
-    const swapBtn     = document.getElementById('swapBtn');
+</div>
 
-    /* ============================================
-       CONTADOR DE CARACTERES
-    ============================================ */
-    inputText.addEventListener('input', () => {
-      const len = inputText.value.length;
-      charCount.textContent = `${len} / 1000`;
-      charCount.classList.toggle('warn', len > 900);
-    });
+<div class="toasts" id="tc"></div>
 
-    /* ============================================
-       TRADUZIR AO PRESSIONAR ENTER (sem shift)
-    ============================================ */
-    inputText.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        translate();
-      }
-    });
+<script>
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hidden');
+    document.getElementById('page').classList.add('ready');
+  }, 1850);
+});
 
-    /* ============================================
-       TROCAR IDIOMAS
-    ============================================ */
-    swapBtn.addEventListener('click', () => {
-      // Se a origem for "auto", não há como trocar
-      if (fromLang.value === 'auto') {
-        showToast('⚠️ Selecione um idioma de origem para trocar.', 'warn');
-        return;
-      }
-      const tmp = fromLang.value;
-      fromLang.value = toLang.value;
-      toLang.value = tmp;
+const inp = document.getElementById('inp');
+const out = document.getElementById('out');
+const fromLang = document.getElementById('fromLang');
+const toLang = document.getElementById('toLang');
+const trBtn = document.getElementById('trBtn');
+const sugBtn = document.getElementById('sugBtn');
+const clrBtn = document.getElementById('clrBtn');
+const copyBtn = document.getElementById('copyBtn');
+const charC = document.getElementById('charC');
+const dtag = document.getElementById('dtag');
+const ov = document.getElementById('ov');
+const sugbox = document.getElementById('sugbox');
+const chips = document.getElementById('chips');
+const sugRes = document.getElementById('sugRes');
+const sugTxt = document.getElementById('sugTxt');
+const swapBtn = document.getElementById('swapBtn');
 
-      // Troca os textos também
-      const tmpTxt = inputText.value;
-      inputText.value = outputText.value;
-      outputText.value = tmpTxt;
-      charCount.textContent = `${inputText.value.length} / 1000`;
-    });
+inp.addEventListener('input', () => {
+  const l = inp.value.length;
+  charC.textContent = l + ' / 1000';
+  charC.classList.toggle('warn', l > 900);
+});
 
-    /* ============================================
-       FUNÇÃO PRINCIPAL: TRADUZIR
-    ============================================ */
-    translateBtn.addEventListener('click', translate);
+inp.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doTranslate(); }
+});
 
-    async function translate() {
-      const text = inputText.value.trim();
+swapBtn.addEventListener('click', () => {
+  if (fromLang.value === 'auto') { toast('⚠️ Selecione um idioma de origem para trocar.'); return; }
+  const tmp = fromLang.value;
+  fromLang.value = toLang.value;
+  toLang.value = tmp;
+  const t = inp.value;
+  inp.value = out.value;
+  out.value = t;
+  charC.textContent = inp.value.length + ' / 1000';
+});
 
-      // Validação: texto vazio
-      if (!text) {
-        showToast('✏️ Digite ou cole um texto antes de traduzir.', 'warn');
-        inputText.focus();
-        return;
-      }
+trBtn.addEventListener('click', doTranslate);
 
-      // Idiomas iguais (exceto auto)
-      if (fromLang.value !== 'auto' && fromLang.value === toLang.value) {
-        showToast('⚠️ Escolha idiomas diferentes para traduzir.', 'warn');
-        return;
-      }
-
-      const from = fromLang.value === 'auto' ? 'autodetect' : fromLang.value;
-      const to   = toLang.value;
-
-      // Loading
-      loadingOverlay.classList.add('active');
-      outputText.value = '';
-      detectTag.classList.remove('visible');
-
-      try {
-        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`;
-        const res  = await fetch(url);
-        if (!res.ok) throw new Error('Erro na API');
-        const data = await res.json();
-
-        const translated = data.responseData?.translatedText;
-
-        if (!translated || data.responseStatus !== 200) {
-          throw new Error(data.responseDetails || 'Tradução falhou.');
-        }
-
-        outputText.value = translated;
-
-        // Mostra idioma detectado, se aplicável
-        if (fromLang.value === 'auto' && data.detectedLanguage?.language) {
-          const lang = langName(data.detectedLanguage.language);
-          detectTag.textContent = `${lang} detectado`;
-          detectTag.classList.add('visible');
-        }
-
-        showToast('✅ Tradução concluída!');
-      } catch (err) {
-        showToast('❌ Erro ao traduzir. Verifique sua conexão.', 'error');
-        console.error(err);
-      } finally {
-        loadingOverlay.classList.remove('active');
-      }
+async function doTranslate() {
+  const txt = inp.value.trim();
+  if (!txt) { toast('✏️ Digite ou cole um texto antes de traduzir.'); inp.focus(); return; }
+  if (fromLang.value !== 'auto' && fromLang.value === toLang.value) { toast('⚠️ Escolha idiomas diferentes.'); return; }
+  const from = fromLang.value === 'auto' ? 'autodetect' : fromLang.value;
+  ov.classList.add('on');
+  out.value = '';
+  dtag.classList.remove('on');
+  try {
+    const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(txt) + '&langpair=' + from + '|' + toLang.value);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    if (!d.responseData || !d.responseData.translatedText || d.responseStatus !== 200) throw new Error(d.responseDetails || '');
+    out.value = d.responseData.translatedText;
+    if (fromLang.value === 'auto' && d.detectedLanguage && d.detectedLanguage.language) {
+      dtag.textContent = lname(d.detectedLanguage.language) + ' detectado';
+      dtag.classList.add('on');
     }
+    toast('✅ Tradução concluída!');
+  } catch(e) {
+    toast('❌ Erro ao traduzir. Verifique sua conexão.');
+  } finally {
+    ov.classList.remove('on');
+  }
+}
 
-    /* ============================================
-       COPIAR TRADUÇÃO
-    ============================================ */
-    copyBtn.addEventListener('click', () => {
-      const txt = outputText.value.trim();
-      if (!txt) {
-        showToast('Nada para copiar ainda.', 'warn');
-        return;
-      }
-      navigator.clipboard.writeText(txt).then(() => {
-        copyBtn.classList.add('copied');
-        copyBtn.querySelector('svg').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>';
-        copyBtn.childNodes[2].nodeValue = ' Copiado!';
-        setTimeout(() => {
-          copyBtn.classList.remove('copied');
-          copyBtn.querySelector('svg').innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>';
-          copyBtn.childNodes[2].nodeValue = ' Copiar';
-        }, 2200);
-      });
-    });
+copyBtn.addEventListener('click', () => {
+  const t = out.value.trim();
+  if (!t) { toast('Nada para copiar ainda.'); return; }
+  navigator.clipboard.writeText(t).then(() => {
+    copyBtn.classList.add('ok');
+    copyBtn.innerHTML = '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Copiado!';
+    setTimeout(() => {
+      copyBtn.classList.remove('ok');
+      copyBtn.innerHTML = '<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copiar';
+    }, 2200);
+  });
+});
 
-    /* ============================================
-       LIMPAR
-    ============================================ */
-    clearBtn.addEventListener('click', () => {
-      inputText.value = '';
-      outputText.value = '';
-      charCount.textContent = '0 / 1000';
-      charCount.classList.remove('warn');
-      detectTag.classList.remove('visible');
-      sugBox.classList.remove('visible');
-      sugTranslated.classList.remove('visible');
-      inputText.focus();
-    });
+clrBtn.addEventListener('click', () => {
+  inp.value = '';
+  out.value = '';
+  charC.textContent = '0 / 1000';
+  charC.classList.remove('warn');
+  dtag.classList.remove('on');
+  sugbox.classList.remove('on');
+  sugRes.classList.remove('on');
+  inp.focus();
+});
 
-    /* ============================================
-       SUGESTÕES DE PEDIDOS
-       Banco de sugestões por idioma + grupo
-    ============================================ */
-    const SUGESTOES = {
-      // Português
-      pt: [
-        { emoji: '🥩', nome: 'Picanha na brasa',     en: 'Grilled picanha steak' },
-        { emoji: '🍤', nome: 'Camarão à alho e óleo', en: 'Garlic butter shrimp' },
-        { emoji: '🍮', nome: 'Pudim de leite',         en: 'Brazilian milk flan' },
-        { emoji: '🥗', nome: 'Salada Caesar',           en: 'Caesar salad' },
-        { emoji: '🍹', nome: 'Caipirinha',              en: 'Caipirinha cocktail' },
-      ],
-      // Inglês / genérico
-      en: [
-        { emoji: '🍔', nome: 'Gourmet burger',          en: 'Gourmet burger' },
-        { emoji: '🥦', nome: 'Grilled salmon',           en: 'Grilled salmon' },
-        { emoji: '🫕',  nome: 'Mac and cheese',           en: 'Mac and cheese' },
-        { emoji: '🥗', nome: 'Avocado toast',             en: 'Avocado toast' },
-        { emoji: '🍰', nome: 'New York cheesecake',       en: 'New York cheesecake' },
-      ],
-      // Espanhol
-      es: [
-        { emoji: '🥘', nome: 'Paella valenciana',        en: 'Valencian paella' },
-        { emoji: '🐟', nome: 'Ceviche',                  en: 'Ceviche' },
-        { emoji: '🥩', nome: 'Asado argentino',          en: 'Argentinian asado' },
-        { emoji: '🫙', nome: 'Gazpacho',                  en: 'Gazpacho' },
-        { emoji: '🍮', nome: 'Churros con chocolate',     en: 'Churros with chocolate' },
-      ],
-      // Francês
-      fr: [
-        { emoji: '🥐', nome: 'Croissant au beurre',       en: 'Butter croissant' },
-        { emoji: '🍷', nome: 'Coq au vin',                en: 'Chicken in red wine' },
-        { emoji: '🧀', nome: 'Soupe à l\'oignon',         en: 'French onion soup' },
-        { emoji: '🥗', nome: 'Salade niçoise',            en: 'Niçoise salad' },
-        { emoji: '🍮', nome: 'Crème brûlée',              en: 'Crème brûlée' },
-      ],
-      // Italiano
-      it: [
-        { emoji: '🍝', nome: 'Pasta alla carbonara',       en: 'Pasta carbonara' },
-        { emoji: '🍕', nome: 'Pizza margherita',           en: 'Margherita pizza' },
-        { emoji: '🥩', nome: 'Ossobuco alla milanese',     en: 'Milanese ossobuco' },
-        { emoji: '🍦', nome: 'Tiramisu',                  en: 'Tiramisu' },
-        { emoji: '🦑', nome: 'Risotto ai frutti di mare',  en: 'Seafood risotto' },
-      ],
-      // Alemão
-      de: [
-        { emoji: '🌭', nome: 'Bratwurst mit Sauerkraut',   en: 'Bratwurst with sauerkraut' },
-        { emoji: '🥨', nome: 'Brezel',                     en: 'Soft pretzel' },
-        { emoji: '🥓', nome: 'Schweinebraten',             en: 'Roast pork' },
-        { emoji: '🍺', nome: 'Weißwurst',                  en: 'White sausage' },
-        { emoji: '🎂', nome: 'Schwarzwälder Kirschtorte',  en: 'Black forest cake' },
-      ],
-      // Japonês
-      ja: [
-        { emoji: '🍣', nome: 'Sushi misto',               en: 'Mixed sushi' },
-        { emoji: '🍜', nome: 'Ramen tonkotsu',             en: 'Tonkotsu ramen' },
-        { emoji: '🍱', nome: 'Bento especial',             en: 'Special bento box' },
-        { emoji: '🥟', nome: 'Gyoza grelhado',             en: 'Pan-fried gyoza' },
-        { emoji: '🍡', nome: 'Wagashi doce',               en: 'Japanese wagashi sweet' },
-      ],
-      // Padrão
-      default: [
-        { emoji: '🥗', nome: 'Prato leve e saudável',      en: 'Light and healthy dish' },
-        { emoji: '🍝', nome: 'Massa artesanal',             en: 'Artisan pasta' },
-        { emoji: '🍔', nome: 'Sanduíche gourmet',           en: 'Gourmet sandwich' },
-        { emoji: '🍰', nome: 'Sobremesa da casa',           en: 'House dessert' },
-        { emoji: '🥤', nome: 'Bebida especial',             en: 'Special drink' },
-      ],
-    };
+const DB = {
+  pt: [
+    {e:'🥩', n:'Picanha na brasa',       en:'Grilled picanha steak'},
+    {e:'🍤', n:'Camarão ao alho',         en:'Garlic butter shrimp'},
+    {e:'🍮', n:'Pudim de leite',          en:'Brazilian milk flan'},
+    {e:'🥗', n:'Salada Caesar',           en:'Caesar salad'},
+    {e:'🍹', n:'Caipirinha',              en:'Caipirinha cocktail'}
+  ],
+  en: [
+    {e:'🍔', n:'Gourmet burger',          en:'Gourmet burger'},
+    {e:'🐟', n:'Grilled salmon',          en:'Grilled salmon'},
+    {e:'🧀', n:'Mac and cheese',          en:'Mac and cheese'},
+    {e:'🥑', n:'Avocado toast',           en:'Avocado toast'},
+    {e:'🍰', n:'NY cheesecake',           en:'New York cheesecake'}
+  ],
+  es: [
+    {e:'🥘', n:'Paella valenciana',       en:'Valencian paella'},
+    {e:'🐟', n:'Ceviche',                 en:'Ceviche'},
+    {e:'🥩', n:'Asado argentino',         en:'Argentinian asado'},
+    {e:'🫙', n:'Gazpacho',               en:'Gazpacho'},
+    {e:'🍩', n:'Churros con chocolate',   en:'Churros with chocolate'}
+  ],
+  fr: [
+    {e:'🥐', n:'Croissant au beurre',     en:'Butter croissant'},
+    {e:'🍷', n:'Coq au vin',              en:'Chicken in red wine'},
+    {e:'🧅', n:'Soupe à l\'oignon',       en:'French onion soup'},
+    {e:'🥗', n:'Salade niçoise',          en:'Nicoise salad'},
+    {e:'🍮', n:'Crème brûlée',            en:'Creme brulee'}
+  ],
+  it: [
+    {e:'🍝', n:'Pasta carbonara',         en:'Pasta alla carbonara'},
+    {e:'🍕', n:'Pizza margherita',        en:'Margherita pizza'},
+    {e:'🥩', n:'Ossobuco',               en:'Ossobuco alla milanese'},
+    {e:'🍦', n:'Tiramisu',               en:'Tiramisu'},
+    {e:'🦑', n:'Risotto ai frutti di mare', en:'Seafood risotto'}
+  ],
+  de: [
+    {e:'🌭', n:'Bratwurst',              en:'Bratwurst with sauerkraut'},
+    {e:'🥨', n:'Brezel',                 en:'Soft pretzel'},
+    {e:'🥓', n:'Schweinebraten',         en:'Roast pork'},
+    {e:'🍺', n:'Weißwurst',              en:'White sausage'},
+    {e:'🎂', n:'Schwarzwälder Torte',    en:'Black forest cake'}
+  ],
+  ja: [
+    {e:'🍣', n:'Sushi misto',            en:'Mixed sushi platter'},
+    {e:'🍜', n:'Ramen tonkotsu',         en:'Tonkotsu ramen'},
+    {e:'🍱', n:'Bento especial',         en:'Special bento box'},
+    {e:'🥟', n:'Gyoza grelhado',         en:'Pan-fried gyoza'},
+    {e:'🍡', n:'Doce wagashi',           en:'Japanese wagashi sweet'}
+  ],
+  zh: [
+    {e:'🥟', n:'Dim sum',               en:'Dim sum'},
+    {e:'🍜', n:'Mapo tofu',             en:'Mapo tofu'},
+    {e:'🦆', n:'Pato laqueado',         en:'Peking duck'},
+    {e:'🌶️', n:'Frango kung pao',       en:'Kung pao chicken'},
+    {e:'🍡', n:'Tang yuan',             en:'Sweet rice balls'}
+  ],
+  ko: [
+    {e:'🥩', n:'Bulgogi',               en:'Korean bulgogi beef'},
+    {e:'🍲', n:'Bibimbap',              en:'Bibimbap rice bowl'},
+    {e:'🥬', n:'Kimchi',                en:'Kimchi'},
+    {e:'🍜', n:'Ramen coreano',         en:'Korean ramyeon'},
+    {e:'🍡', n:'Tteok',                 en:'Korean rice cake'}
+  ],
+  default: [
+    {e:'🥗', n:'Prato leve',            en:'Light healthy dish'},
+    {e:'🍝', n:'Massa artesanal',       en:'Artisan pasta'},
+    {e:'🍔', n:'Sanduíche gourmet',     en:'Gourmet sandwich'},
+    {e:'🍰', n:'Sobremesa da casa',     en:'House dessert'},
+    {e:'🥤', n:'Bebida especial',       en:'Special drink'}
+  ]
+};
 
-    suggestBtn.addEventListener('click', () => {
-      const lang  = toLang.value;
-      const pool  = SUGESTOES[lang] || SUGESTOES['default'];
+sugBtn.addEventListener('click', () => {
+  const pool = DB[toLang.value] || DB['default'];
+  chips.innerHTML = '';
+  sugRes.classList.remove('on');
+  pool.forEach(item => {
+    const c = document.createElement('button');
+    c.className = 'chip';
+    c.innerHTML = '<span>' + item.e + '</span>' + item.n;
+    c.addEventListener('click', () => pickSug(item));
+    chips.appendChild(c);
+  });
+  sugbox.classList.add('on');
+  sugbox.scrollIntoView({behavior:'smooth', block:'nearest'});
+});
 
-      // Renderiza chips
-      sugChips.innerHTML = '';
-      sugTranslated.classList.remove('visible');
+async function pickSug(item) {
+  sugRes.classList.remove('on');
+  try {
+    const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(item.en) + '&langpair=en|' + toLang.value);
+    const d = await r.json();
+    const txt = (d.responseData && d.responseData.translatedText) ? d.responseData.translatedText : item.n;
+    sugTxt.innerHTML = '<strong>Sugestão:</strong> ' + txt;
+    sugRes.classList.add('on');
+    out.value = txt;
+    toast('🍽️ ' + item.e + ' ' + txt);
+  } catch(e) {
+    toast('❌ Não foi possível buscar a sugestão.');
+  }
+}
 
-      pool.forEach(item => {
-        const chip = document.createElement('button');
-        chip.className = 'sug-chip';
-        chip.innerHTML = `<span>${item.emoji}</span> ${item.nome}`;
-        chip.addEventListener('click', () => selectSuggestion(item, lang));
-        sugChips.appendChild(chip);
-      });
+function lname(c) {
+  var m = {pt:'Português',en:'Inglês',es:'Espanhol',fr:'Francês',it:'Italiano',de:'Alemão',ja:'Japonês',zh:'Chinês',ko:'Coreano',ar:'Árabe',ru:'Russo',nl:'Holandês',tr:'Turco',th:'Tailandês'};
+  var code = c ? c.split('-')[0] : '';
+  return m[code] || c || 'Idioma';
+}
 
-      sugBox.classList.add('visible');
-      sugBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    });
-
-    /* Quando o usuário clica num chip, traduz o item EN→toLang */
-    async function selectSuggestion(item, targetLang) {
-      sugTranslated.classList.remove('visible');
-
-      try {
-        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(item.en)}&langpair=en|${targetLang}`;
-        const res  = await fetch(url);
-        const data = await res.json();
-        const txt  = data.responseData?.translatedText || item.nome;
-
-        sugTranslatedText.innerHTML = `<strong>Sugestão:</strong> ${txt}`;
-        sugTranslated.classList.add('visible');
-
-        // Também preenche o campo de saída
-        outputText.value = txt;
-        showToast(`🍽️ Sugestão: ${item.emoji} ${txt}`);
-      } catch {
-        showToast('❌ Não foi possível buscar a sugestão.', 'error');
-      }
-    }
-
-    /* ============================================
-       HELPER: nome do idioma detectado
-    ============================================ */
-    function langName(code) {
-      const map = {
-        pt: 'Português', en: 'Inglês', es: 'Espanhol', fr: 'Francês',
-        it: 'Italiano',  de: 'Alemão', ja: 'Japonês',  zh: 'Chinês',
-        ko: 'Coreano',   ar: 'Árabe',  ru: 'Russo',    nl: 'Holandês',
-        pl: 'Polonês',   tr: 'Turco',  th: 'Tailandês',
-      };
-      return map[code?.split('-')[0]] || code || 'Idioma';
-    }
-
-    /* ============================================
-       HELPER: TOAST
-    ============================================ */
-    function showToast(msg, type = 'info') {
-      const tc = document.getElementById('toastContainer');
-      const t  = document.createElement('div');
-      t.className = 'toast';
-      if (type === 'error') t.style.borderColor = 'rgba(248,113,113,0.4)';
-      if (type === 'warn')  t.style.borderColor = 'rgba(251,191,36,0.4)';
-      t.textContent = msg;
-      tc.appendChild(t);
-      setTimeout(() => t.remove(), 2800);
-    }
-  </script>
-
+function toast(msg) {
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.getElementById('tc').appendChild(t);
+  setTimeout(function(){ t.remove(); }, 2850);
+}
+</script>
 </body>
 </html>
