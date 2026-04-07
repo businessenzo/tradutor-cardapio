@@ -64,7 +64,8 @@ select option{background:var(--surface-2);color:var(--text)}
 .swap-btn{flex-shrink:0;width:44px;height:44px;background:var(--surface-2);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);transition:all var(--tr)}
 .swap-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);transform:rotate(180deg)}
 .areas{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.acard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:border-color var(--tr)}
+.acard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:border-color var(--tr),box-shadow var(--tr),transform var(--tr)}
+.acard:hover{transform:translateY(-1px)}
 .acard:focus-within{border-color:rgba(245,166,35,.35);box-shadow:0 0 0 3px rgba(245,166,35,.07)}
 .acard.out:focus-within{border-color:rgba(0,210,200,.35);box-shadow:0 0 0 3px rgba(0,210,200,.07)}
 .ahead{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
@@ -238,7 +239,7 @@ footer a:hover{color:var(--text)}
         <textarea id="out" placeholder="A tradução aparecerá aqui…" readonly></textarea>
         <div class="overlay" id="ov">
           <div class="ring"></div>
-          <span class="ltxt">Traduzindo…</span>
+          <span class="ltxt">Processando tradução…</span>
         </div>
       </div>
     </div>
@@ -252,7 +253,7 @@ footer a:hover{color:var(--text)}
     </div>
 
     <div class="sugbox" id="sugbox">
-      <div class="sug-hd">Sugestões populares para o destino</div>
+      <div class="sug-hd">Curadoria de pratos populares para o destino selecionado</div>
       <div class="chips" id="chips"></div>
       <div class="sug-res" id="sugRes"><span>🍽️</span><span id="sugTxt"></span></div>
     </div>
@@ -329,6 +330,7 @@ async function doTranslate() {
     const d = await r.json();
     if (!d.responseData || !d.responseData.translatedText || d.responseStatus !== 200) throw new Error(d.responseDetails || '');
     out.value = d.responseData.translatedText;
+    out.classList.add('filled');
     if (fromLang.value === 'auto' && d.detectedLanguage && d.detectedLanguage.language) {
       dtag.textContent = lname(d.detectedLanguage.language) + ' detectado';
       dtag.classList.add('on');
@@ -357,6 +359,7 @@ copyBtn.addEventListener('click', () => {
 clrBtn.addEventListener('click', () => {
   inp.value = '';
   out.value = '';
+  out.classList.remove('filled');
   charC.textContent = '0 / 1000';
   charC.classList.remove('warn');
   dtag.classList.remove('on');
